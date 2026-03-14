@@ -207,68 +207,199 @@ All evaluated using cross-validation to avoid overfitting to the validation set.
 
 ##### Logistic Regression
 
-Logistic Regression is a supervised classification algorithm that models the probability of a binary class label using the **sigmoid function**:
+###### Core Idea
+
+Linear regression outputs values in $(-\infty, +\infty)$, unsuitable for classification. Logistic Regression squashes the linear output into a probability using the **sigmoid function**:
 
 $$\sigma(z) = \frac{1}{1 + e^{-z}}, \quad z = w^T x + b$$
 
-$$P(y = 1 \mid x) = \sigma(w^T x + b)$$
+$$P(y = 1 \mid x) = \sigma(w^T x + b), \qquad P(y = 0 \mid x) = 1 - \sigma(w^T x + b)$$
 
-The **decision boundary** is the hyperplane $w^T x + b = 0$, where:
+The sigmoid maps any real number to $(0, 1)$, making it interpretable as a probability.
 
-- If $P(y=1 \mid x) \geq 0.5$, classify as class 1.
-- Otherwise, classify as class 0.
+###### Sigmoid Curve
 
-**Training - Loss Function:**
+```
+P(y=1)
+ 1.0 |                          ___________
+     |                    ____/
+ 0.5 |_________________ /  <-- decision threshold
+     |              __/
+ 0.0 |_____________/
+      <- negative z       z=0       positive z ->
+```
 
-The Binary Cross-Entropy (log loss) is used:
+- When $z \gg 0$: $\sigma(z) \to 1$ (predict class 1)
+- When $z \ll 0$: $\sigma(z) \to 0$ (predict class 0)
+- When $z = 0$: $\sigma(z) = 0.5$ (on the decision boundary)
+
+###### Decision Boundary
+
+The decision boundary is where $P(y=1 \mid x) = 0.5$, which occurs at $z = 0$:
+
+$$w^T x + b = 0$$
+
+This is a hyperplane in feature space. In 2D it is a line; in 3D it is a plane.
+
+**Example (2D):** If $w = [2, -1]^T$, $b = -3$, boundary is $2x_1 - x_2 - 3 = 0$.
+
+```
+x2
+ |          . . class 1
+ |        . .
+ |  ------/-----  <- w^Tx + b = 0
+ |      /  * *
+ |    /  * *  class 0
+ +-----------> x1
+```
+
+###### Loss Function - Binary Cross-Entropy
+
+MSE is non-convex with sigmoid, so **log loss** is used instead:
 
 $$J(w, b) = -\frac{1}{n} \sum_{i=1}^n \left[ y_i \log \hat{y}_i + (1 - y_i) \log(1 - \hat{y}_i) \right]$$
 
-Parameters are updated using gradient descent:
+**Intuition:** If $y_i = 1$ and $\hat{y}_i \to 1$: loss $\to 0$. If $y_i = 1$ and $\hat{y}_i \to 0$: loss $\to \infty$. This loss is convex in $w$, guaranteeing a global minimum.
 
-$$w := w - \alpha \frac{\partial J}{\partial w}, \quad b := b - \alpha \frac{\partial J}{\partial b}$$
+###### Gradient Descent Update
 
-**Multi-class extension:** One-vs-Rest (OvR) or Softmax Regression.
+$$\frac{\partial J}{\partial w} = \frac{1}{n} X^T(\hat{y} - y)$$
 
-**Characteristics:**
+$$w := w - \alpha \cdot \frac{\partial J}{\partial w}, \qquad b := b - \alpha \cdot \frac{\partial J}{\partial b}$$
 
-- Outputs a probability score (interpretable).
-- Assumes linear decision boundary.
-- Fast training; works well on linearly separable data.
-- Susceptible to class imbalance; regularization (L1/L2) prevents overfitting.
+###### Regularization
 
----
+- **L2 (Ridge):** $J_{\text{reg}} = J + \dfrac{\lambda}{2}|w|^2$ - shrinks all weights smoothly.
+- **L1 (Lasso):** $J_{\text{reg}} = J + \lambda|w|_1$ - drives some weights to zero (sparse model).
+
+###### Multi-class Extension
+
+- **One-vs-Rest (OvR):** Train $k$ binary classifiers; assign class with highest confidence.
+- **Softmax Regression:** $P(y = c \mid x) = \dfrac{e^{w_c^T x}}{\sum_{j=1}^k e^{w_j^T x}}$
 
 ##### Support Vector Machine (SVM)
 
-SVM finds the **optimal hyperplane** that maximally separates the two classes. The margin is the distance between the decision boundary and the nearest training points (support vectors).
+###### Core Idea
 
-**Geometric margin:** $\text{margin} = \dfrac{2}{|w|}$
+Logistic Regression picks any separating hyperplane. SVM picks the unique **maximum-margin hyperplane** - the one furthest from all training points of both classes.
 
-**Optimization problem (Hard Margin SVM):**
+###### Geometry of the Hyperplane and Margin
 
-$$\min_{w, b} \frac{1}{2} |w|^2 \quad \text{subject to} \quad y_i(w^T x_i + b) \geq 1 \quad \forall i$$
+```
+         Margin = 2 / ||w||
+         |<----------------->|
 
-**Soft Margin SVM** (for non-separable data) introduces slack variables $\xi_i \geq 0$:
+Class +1:  o   o             Support Vector -> o
+                  o
+           -------------------  <- w^Tx + b = +1
+           ===== BOUNDARY =====  <- w^Tx + b =  0
+           -------------------  <- w^Tx + b = -1
+                  x          Support Vector -> x
+Class -1:  x   x
+```
+
+**Support vectors** are training points lying exactly on the $\pm 1$ margin boundaries. Only these points influence the hyperplane.
+
+**Distance from hyperplane to a point:** $d = \dfrac{|w^T x + b|}{|w|}$
+
+**Full margin** (from $+1$ boundary to $-1$ boundary): $\text{margin} = \dfrac{2}{|w|}$
+
+Maximizing margin $\equiv$ minimizing $|w|$ $\equiv$ minimizing $\dfrac{1}{2}|w|^2$.
+
+###### Why SVM's Hyperplane is Better
+
+```
+Multiple valid hyperplanes      SVM picks maximum-margin one
+(logistic regression)
+
+  o  o                           o  o
+     o  /  /  /                     o  |
+    o  /  /  /  x                  o  |  x
+       /  /  /  x  x                  |  x  x
+      /  /  /                         |
+```
+
+The maximum-margin hyperplane has the highest geometric confidence and generalizes better.
+
+###### Hard Margin SVM
+
+For linearly separable data:
+
+$$\min_{w, b} \frac{1}{2}|w|^2 \quad \text{subject to} \quad y_i(w^T x_i + b) \geq 1 \quad \forall i$$
+
+###### Soft Margin SVM
+
+For non-separable data, slack variables $\xi_i \geq 0$ allow margin violations:
 
 $$\min_{w, b, \xi} \frac{1}{2}|w|^2 + C \sum_{i=1}^n \xi_i \quad \text{subject to} \quad y_i(w^T x_i + b) \geq 1 - \xi_i$$
 
-- $C$ is the regularization parameter:
-    - Large $C$: low margin, fewer misclassifications (risk of overfitting).
-    - Small $C$: wider margin, more misclassifications tolerated (more generalization).
+**Meaning of $\xi_i$:**
 
-**Kernel SVM** handles non-linearly separable data by replacing the dot product with a kernel function $K(x_i, x_j)$, mapping data to a higher-dimensional space implicitly.
+- $\xi_i = 0$: correctly classified, outside margin.
+- $0 < \xi_i \leq 1$: inside margin but on the correct side.
+- $\xi_i > 1$: misclassified.
 
-**Comparison:**
+**Role of $C$:**
+
+|$C$|Effect|
+|---|---|
+|Large|High violation penalty - narrow margin - overfitting risk|
+|Small|Low violation penalty - wide margin - better generalization|
+
+###### Dual Formulation and the Kernel Trick
+
+The primal is converted to a **Lagrangian dual** using multipliers $\alpha_i \geq 0$:
+
+$$\max_\alpha \sum_i \alpha_i - \frac{1}{2}\sum_i\sum_j \alpha_i \alpha_j y_i y_j (x_i \cdot x_j) \quad \text{s.t.} \quad \sum_i \alpha_i y_i = 0,\ 0 \leq \alpha_i \leq C$$
+
+Inputs appear **only as dot products** $x_i \cdot x_j$. This is what makes the kernel trick possible.
+
+**The Kernel Trick:** Map data to a higher-dimensional space $\phi(x)$ where linear separation is possible. Instead of computing $\phi(x_i) \cdot \phi(x_j)$ explicitly, use a kernel function:
+
+$$K(x_i, x_j) = \phi(x_i) \cdot \phi(x_j)$$
+
+Replace every $x_i \cdot x_j$ in the dual with $K(x_i, x_j)$. No explicit computation of $\phi(x)$ needed.
+
+```mermaid
+flowchart LR
+    A["Non-linearly separable\ndata in R²"] -->|"K(x,z) = φ(x)·φ(z)"| B["Linearly separable\nin higher-dim Rᴺ"]
+    B --> C["SVM finds hyperplane"]
+    C -->|"Project back"| D["Non-linear boundary\nin original R²"]
+```
+
+###### Common Kernels
+
+**Linear:** $K(x, z) = x \cdot z$ - no transformation; standard SVM.
+
+**Polynomial:** $K(x, z) = (x \cdot z + c)^d$
+
+For $d=2$, $c=1$, $x=(x_1,x_2)$: implicit $\phi(x) = [1,\ \sqrt{2}x_1,\ \sqrt{2}x_2,\ x_1^2,\ x_2^2,\ \sqrt{2}x_1 x_2]$. The kernel computes this dot product without ever forming $\phi(x)$ explicitly.
+
+**RBF (Gaussian):** $K(x, z) = \exp\left(-\gamma |x - z|^2\right)$
+
+- $K \approx 1$ when $x \approx z$; $K \approx 0$ when far apart.
+- Feature space is infinite-dimensional.
+- Large $\gamma$: narrow influence, complex boundary, overfitting risk.
+- Small $\gamma$: wide influence, smooth boundary, underfitting risk.
+
+**Decision function (kernel SVM):**
+
+$$f(x) = \text{sign}\left(\sum_{i \in SV} \alpha_i y_i K(x_i, x) + b\right)$$
+
+Only support vectors (where $\alpha_i > 0$) appear - making inference memory-efficient.
+
+##### Comparison
 
 |Aspect|Logistic Regression|SVM|
 |---|---|---|
-|Output|Probability|Class label|
-|Decision boundary|Probabilistic, soft|Maximum margin, hard|
-|Kernel support|No (by default)|Yes|
-|Performance on small data|Good|Very good|
-|Training speed|Fast|Slower (quadratic programming)|
+|Output|Probability $\in (0,1)$|Class label ${+1,-1}$|
+|Hyperplane selection|Any valid separator|Unique maximum-margin separator|
+|Decision boundary|Probabilistic, soft|Geometric, hard|
+|Non-linear data|Requires manual feature engineering|Kernel trick handles implicitly|
+|Training cost|$O(nd)$ - fast|$O(n^2)$ to $O(n^3)$ - quadratic programming|
 |Interpretability|High|Low|
+|Kernel support|No (by default)|Yes|
+|Regularization|L1 / L2 on loss|$C$ on margin|
 
 ---
 
