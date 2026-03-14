@@ -1208,7 +1208,9 @@ flowchart TD
     C --> D[Evaluate on remaining fold]
     D --> E[Repeat k times]
     E --> F[Average k metrics → CV Score]
-    F --> G{Model selection /\nHyperparameter tuning}
-    G --> H[Choose model with\nlowest CV error]
-    H --> I[Final evaluation on\nheld-out test set]
+    F --> G{Model selection / Hyperparameter tuning}
+    G --> H[Choose model with
+    lowest CV error]
+    H --> I[Final evaluation on
+    held-out test set]
 ```
