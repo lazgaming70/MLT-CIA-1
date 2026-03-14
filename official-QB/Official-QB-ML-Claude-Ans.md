@@ -12,11 +12,11 @@ $$\lambda^2 - 4\lambda + 3 = 0 \implies (\lambda - 1)(\lambda - 3) = 0$$
 
 **Eigenvector for $\lambda_1 = 1$:** Solve $(A - I)v = 0$
 
-$$\begin{bmatrix} 1 & 1 \ 1 & 1 \end{bmatrix}v = 0 \implies v_1 = \begin{bmatrix} 1 \ -1 \end{bmatrix}$$
+$$\begin{bmatrix} 1 & 1 \\ 1 & 1 \end{bmatrix}v = 0 \implies v_1 = \begin{bmatrix} 1 \\ -1 \end{bmatrix}$$
 
 **Eigenvector for $\lambda_2 = 3$:** Solve $(A - 3I)v = 0$
 
-$$\begin{bmatrix} -1 & 1 \ 1 & -1 \end{bmatrix}v = 0 \implies v_2 = \begin{bmatrix} 1 \ 1 \end{bmatrix}$$
+$$\begin{bmatrix} -1 & 1 \\ 1 & -1 \end{bmatrix}v = 0 \implies v_2 = \begin{bmatrix} 1 \\ 1 \end{bmatrix}$$
 
 ---
 
@@ -888,15 +888,14 @@ Email with word "win" has 77.4% probability of being spam - classified as spam.
 ##### Flow
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[New Email] --> B[Tokenize words]
-    B --> C{Compute P(S|words)\nand P(H|words)}
-    C --> D{P(S|words) >\nthreshold?}
+    B --> C{"Compute P(S|words) and P(H|words)"}
+    C --> D{"P(S|words) > threshold?"}
     D -- Yes --> E[Spam]
     D -- No --> F[Ham / Inbox]
 ```
 
----
 
 #### 12. Analyze the problems of underfitting and overfitting and discuss methods to overcome them.
 
